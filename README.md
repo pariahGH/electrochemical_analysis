@@ -18,6 +18,9 @@ The data analysis script consumes the output of the screen recorder - it can als
 as the timeframe for that data is fixed. It produces graphs using matplotlib, and can output paired graphs (ie both of the electrodes in dual configuration cell)
 as well as customized averages (with +- SEM). 
 
+## Dependencies
+
+The screen recorder requires that Tesseract OCR be installed and in PATH
 
 
 This is all still in development as I figure out better ways of processing the data or additional features that would be helpful. 
