@@ -12,6 +12,8 @@ screen shot of the displayed data as well as tracking steps in the experiment, t
 CSV which can be consumed by the data analysis program, as well as being easier to read manually - this method also allows for the tracking
 of other data that cannot necessarily be obtained from the equipment software. 
 
+The screen recorder requires that Tesseract OCR be installed and in PATH
+
 ## Data Analysis
 
 The data analysis script consumes the output of the screen recorder - it can also consume cyclic voltammetry data from the controller software,
