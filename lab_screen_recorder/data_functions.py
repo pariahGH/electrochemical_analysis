@@ -1,4 +1,3 @@
-#handles OCR, data analysis for the lab screen recorder - EC ONLY
 import pytesseract
 from PIL import Image
 import glob

@@ -51,7 +51,6 @@ def parseFilesCV(paths, magnitude):
 				#convert to desired units by multiplying by magnitude
 				dataOne.append(dec(target[-2])*dec(magnitude))
 				dataTwo.append(dec(target[-1])*dec(magnitude))
-				## this needs to be changed
 				axis.append(dec((target[-3])))
 			electrodenames = electrodeNamePattern.findall(path.split("\\")[-1])
 			data.append({"data":dataOne,"path":path,"electrodeName":electrodeNames[0],"pairname":electrodenames,"xaxis":axis})

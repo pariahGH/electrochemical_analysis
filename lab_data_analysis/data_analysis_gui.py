@@ -1,7 +1,3 @@
-#we want to display a folder picker to pick the folder
-#we read in all the csvs in the folder, looking for the sequential currents
-#we should end up with n arrays of x length
-
 import wx
 import functions
 import wx.lib.scrolledpanel as scrolled
@@ -50,8 +46,7 @@ class FileSelectScreen(wx.Frame):
 		self.listScrolledSizer = wx.BoxSizer(wx.VERTICAL)
 		selectFilesButton = wx.Button(self.panel,size=(self.screenWidth,25), label="Select File")
 		self.listScrolled.SetSizer(self.listScrolledSizer)
-		listHolder.Add(selectFilesButton)
-		listHolder.Add(self.listScrolled)
+		listHolder.AddMany([selectFilesButton, self.listScrolled])
 		
 		titleHolder = wx.BoxSizer(wx.HORIZONTAL)
 		titleHolder.Add(wx.StaticText(self.panel, size=(100,25),label="Experiment Title"))
@@ -66,17 +61,11 @@ class FileSelectScreen(wx.Frame):
 		directorySelectionHolder = wx.BoxSizer(wx.VERTICAL)
 		directorySelect = wx.Button(self.panel, label="Select directory for image folders")
 		self.dirText = wx.StaticText(self.panel, label="No directory selected")
-		directorySelectionHolder.Add(directorySelect)
-		directorySelectionHolder.Add(self.dirText)
+		directorySelectionHolder.AddMany([directorySelect,self.dirText])
 		
 		self.mainBox = wx.BoxSizer(wx.VERTICAL)
-		self.mainBox.Add(self.instructions)
-		self.mainBox.Add(titleHolder)
-		self.mainBox.Add(magnitudeSelectionHolder)
-		self.mainBox.Add(self.electrodeSelectionHolder)
-		self.mainBox.Add(directorySelectionHolder)
-		self.mainBox.Add(listHolder)
-		self.mainBox.Add(buttonHolder)
+		self.mainBox.AddMany([self.instructions, titleHolder, magnitudeSelectionHolder, self.electrodeSelectionHolder,
+		directorySelectionHolder, listHolder, buttonHolder])
 		self.panel.SetSizerAndFit(self.mainBox)
 		
 		self.Bind(wx.EVT_BUTTON, self.dirSelectClicked, directorySelect)
@@ -91,8 +80,6 @@ class FileSelectScreen(wx.Frame):
 			self.electrodeSelectionHolder.Add(self.electrodeBox)
 			self.mainBox.Layout()
 			self.Fit()
-			#self.panel.SetSizerAndFit(self.mainBox)
-			#self.panel.Refresh()
 			
 	def fileSelectClicked(self, event):
 		with wx.FileDialog(self, "Select files", wildcard="CSV files (*.csv)|*.csv", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST | wx.FD_MULTIPLE) as fileDialog:
@@ -168,8 +155,7 @@ class GraphScreen(wx.Frame):
 		
 		menuHolder.AddMany([makePairsButton, makeAverageInstructions,self.makeAverageEntry, self.averageTitleEntry, makeAveragesButton, continueButton])
 			
-		mainBox.Add(menuHolder)
-		mainBox.Add(self.graphPanel)
+		mainBox.AddMany([menuHolder, self.graphPanel])
 		
 		self.panel.SetSizerAndFit(mainBox)
 		self.Bind(wx.EVT_BUTTON, self.continueClicked, continueButton);
@@ -180,7 +166,6 @@ class GraphScreen(wx.Frame):
 		self.settings = settings
 		graphHolder = wx.GridSizer(3,round(len(settings["graphs"])/3),10)
 		for object in settings["graphs"]:
-			#load image, create checkbox with label
 			image = wx.Image(object["imagepath"])
 			image.Rescale(300,300)
 			itemText = wx.StaticText(self.graphPanel, label=object["electrodeName"])
