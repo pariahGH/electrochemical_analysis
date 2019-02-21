@@ -4,56 +4,49 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import host_subplot
 import mpl_toolkits.axisartist as AA
 import util
+import datetime
 
-#create a class for each of the possible functions - should implement clear fucntion, get params function
-#these should also handle calling the generating functions, and should return data to be displayed
-class GenerateCurveSettings():
-	def __init__(self, panel):
-		rootPanel = wx.Panel(panel)
-		rootSizer = wx.BoxSizer(wx.HORIZONTAL)
-		
-	def clear(self, evt):
-		print("cleared")
-		
-	def generateResults():
-		return window
-		
-	def getSettings(self):
-		return self.window
-		
 class UseCurveSettings():
 	def __init__(self,rootPanel):
-		rootSizer = wx.GridSizer(2, 6, 5, 5)
+		rootSizer = wx.BoxSizer(wx.VERTICAL)
+		self.rootPanel = rootPanel
 		
-		self.powerConsumptionRateEntry = wx.TextCtrl(rootPanel)
-		self.batteryCapacityEntry = wx.TextCtrl(rootPanel)
-		self.initialFuelCellOutputEntry = wx.TextCtrl(rootPanel)
-		self.plusTenOutputEntry = wx.TextCtrl(rootPanel)
-		self.plusHundredOutputEntry = wx.TextCtrl(rootPanel)
+		self.powerConsumptionRateEntry = wx.TextCtrl(self.rootPanel)
+		self.batteryCapacityEntry = wx.TextCtrl(self.rootPanel)
+		self.initialFuelCellOutputEntry = wx.TextCtrl(self.rootPanel)
+		self.plusTenOutputEntry = wx.TextCtrl(self.rootPanel)
+		self.plusHundredOutputEntry = wx.TextCtrl(self.rootPanel)
 		
-		powerConsumptionRateLabel = wx.StaticText(rootPanel, wx.ID_ANY, "Power consumption rate (mW)")
-		batteryCapacityLabel = wx.StaticText(rootPanel, wx.ID_ANY, "Initial battery capacity (mJ)")
-		initialFuelCellOutputLabel = wx.StaticText(rootPanel, wx.ID_ANY, "Fuel cell output t=0 (mW)")
-		plusTenOutputLabel = wx.StaticText(rootPanel, wx.ID_ANY, "Fuel cell output t=10")
-		plusHundredOutputLabel = wx.StaticText(rootPanel, wx.ID_ANY, "Fuel cell output t=100")
+		powerConsumptionRateLabel = wx.StaticText(self.rootPanel, wx.ID_ANY, "Power consumption rate (mW)")
+		batteryCapacityLabel = wx.StaticText(self.rootPanel, wx.ID_ANY, "Initial battery capacity (mJ)")
 		
-		'''
-		TODO: change this to take one initial value and 9 additional values with user specified times, user still selects scale
-		'''
+		timeLabel = wx.StaticText(self.rootPanel, wx.ID_ANY, "Time")
+		outputLabel = wx.StaticText(self.rootPanel, wx.ID_ANY, "Output")
+		self.timeOutputGrid = wx.grid.Grid(self.rootPanel, wx.ID_ANY)
+		self.timeOutputGrid.CreateGrid(2,1)
+		self.timeOutputGrid.EnableGridLines(True)
 		
-		self.fuelCellCurveTimescaleSelector = wx.ComboBox(rootPanel,choices=["Hours", "Days"])
-		fuelCellCurveTimescaleLabel = wx.StaticText(rootPanel, wx.ID_ANY, "Timescale of fuel cell readings")
+		timeOutputContainer = wx.BoxSizer(wx.HORIZONTAL)
+		labelContainer = wx.BoxSizer(wx.VERTICAL)
+		labelContainer.AddMany([timeLabel, outputLabel])
+		addPairButton = wx.Button(self.rootPanel, wx.ID_ANY, "Add Time/Output Pair")
+		timeGridOutputScroller = wx.ScrolledWindow(self.rootPanel, wx.ID_ANY)
+		timeGridOutputScroller.EnableScrolling(True, False)
+		timeGridOutputScroller.SetScrollbars(20, 0, 10, 0)
+		timeOutputContainer.AddMany([labelContainer, self.timeOutputGrid])
+
+		self.fuelCellCurveTimescaleSelector = wx.ComboBox(self.rootPanel,choices=["Hours", "Days"])
+		fuelCellCurveTimescaleLabel = wx.StaticText(self.rootPanel, wx.ID_ANY, "Timescale of fuel cell readings")
 		
-		rootSizer.AddMany([powerConsumptionRateLabel, batteryCapacityLabel, initialFuelCellOutputLabel,
-		plusTenOutputLabel, plusHundredOutputLabel,fuelCellCurveTimescaleLabel,
-			self.powerConsumptionRateEntry,
-			self.batteryCapacityEntry,
-			self.initialFuelCellOutputEntry,
-			self.plusTenOutputEntry,
-			self.plusHundredOutputEntry,
-			self.fuelCellCurveTimescaleSelector
+		topSizer = wx.GridSizer(2, 4, 5, 5)
+		topSizer.AddMany([
+			powerConsumptionRateLabel, batteryCapacityLabel, fuelCellCurveTimescaleLabel, addPairButton,
+			self.powerConsumptionRateEntry,self.batteryCapacityEntry, self.fuelCellCurveTimescaleSelector
 		])
+		
+		rootSizer.AddMany([topSizer, timeOutputContainer])
 		self.window = rootSizer
+		self.rootPanel.Bind(wx.EVT_BUTTON, self.addPair, addPairButton)
 		
 	def clear(self, evt):
 		self.powerConsumptionRateEntry.SetValue("")
@@ -62,87 +55,90 @@ class UseCurveSettings():
 		self.plusTenOutputEntry.SetValue("")
 		self.plusHundredOutputEntry.SetValue("")
 		
+	def addPair(self, evt):
+		self.timeOutputGrid.AppendCols(1)
+		
 	def getSettings(self):
 		return self.window
 		
 	def generateResults(self, panel):
-		try:
-			consumptionRate = float(self.powerConsumptionRateEntry.GetValue())
-			batteryCharge = float(self.batteryCapacityEntry.GetValue())
-			initialFuelCellOutput = float(self.initialFuelCellOutputEntry.GetValue())
-			plusTenOutput = float(self.plusTenOutputEntry.GetValue())
-			plusHundredOutput = float(self.plusHundredOutputEntry.GetValue())
-			scale = self.fuelCellCurveTimescaleSelector.GetStringSelection()
-		except Exception as e:
-			print("one or more inputs is invalid!")
-			print(e)
+		if self.timeOutputGrid.GetNumberCols() <3:
+			dlg = wx.MessageDialog(self.rootPanel, "At least 3 points required for fuel cell output")
+			dlg.ShowModal()
+			return None
 		else:
-			#TODO: rework this whole section for memory efficiency
-			#instead of calculating raw seconds, use summing and integrals to calculate in hours and days
-			outputGenerator = util.generateFuelCellCurveFromPoints(initialFuelCellOutput, plusTenOutput, plusHundredOutput, scale)
-			
-			output = next(outputGenerator)
-			chargeVsTime = [batteryCharge]
-			outputVsTime = [output]
-			timeToZeroOutput = 0
-			#ticks in seconds
-			while batteryCharge >= 0:
+			try:
+				points = util.getPoints(self.timeOutputGrid)
+				consumptionRate = float(self.powerConsumptionRateEntry.GetValue())
+				batteryCharge = float(self.batteryCapacityEntry.GetValue())
+				scale = self.fuelCellCurveTimescaleSelector.GetStringSelection()
+			except Exception as e:
+				print("one or more inputs is invalid!")
+				print(e)
+			else:			
+				scales = {"Hours": 60*60, "Days":60*60*24}
+				timeFactor = scales[scale]
+				outputGenerator = util.generateFuelCellCurveFromPoints(points, timeFactor)
+				self.popt = next(outputGenerator)
 				output = next(outputGenerator)
-				if output >= 0.1:
-					timeToZeroOutput+=1
-				batteryCharge = min(batteryCharge + output - consumptionRate, batteryCharge)
-				chargeVsTime.append(batteryCharge)
-				outputVsTime.append(output)
+				chargeVsTime = [batteryCharge]
+				outputVsTime = [output]
+				self.timeToZeroOutput = 0
+				#move this to a util function to keep gui code clean
+				while batteryCharge >= 0:
+					output = next(outputGenerator)
+					if output >= 0.1:
+						self.timeToZeroOutput+=1
+					batteryCharge = min(batteryCharge + output - (consumptionRate*timeFactor), batteryCharge)
+					chargeVsTime.append(batteryCharge)
+					outputVsTime.append(output)
+				self.timeToEmptyBattery = len(chargeVsTime)
+				xaxis = range(0, len(chargeVsTime))
+							
+				fig, host = plt.subplots()
+				fig.subplots_adjust(right=0.75)
+				par1 = host.twinx()
+
+				host.set_xlabel("Time")
+				host.set_ylabel("Fuel Cell Output")
+				par1.set_ylabel("Battery Charge")
+					
+				p1, = host.plot(xaxis, outputVsTime, color="r", label="Fuel Cell Output")
+				p2, = par1.plot(xaxis, chargeVsTime, label="Battery Charge")
+
+				host.legend()
 				
-			xaxis = range(0, len(chargeVsTime))
-						
-			fig, host = plt.subplots()
-			fig.subplots_adjust(right=0.75)
-			par1 = host.twinx()
+				host.yaxis.label.set_color(p1.get_color())
+				par1.yaxis.label.set_color(p2.get_color())
 
-			host.set_xlabel("Time")
-			host.set_ylabel("Fuel Cell Output")
-			par1.set_ylabel("Battery Charge")
-
-			#convert our x axis to minutes if in hours, hours if in days - fix this later
-			sampleTime = 60
-			if scale == "Days":
-				samepleTime = sampleTime * 60
-			index = 0
-			sampledCharge = []
-			sampledOutput = []
-			sampledTime = []
-			while index <= len(chargeVsTime) - 1 :
-				sampledCharge.append(chargeVsTime[index])
-				sampledOutput.append(outputVsTime[index])
-				sampledTime.append(index/sampleTime)
-				index += sampleTime
+				plt.draw()
 				
-			if index != len(chargeVsTime) -1 :
-				sampledCharge.append(chargeVsTime[-1])
-				sampledOutput.append(outputVsTime[-1])
-				sampledTime.append(xaxis[-1]/sampleTime)
+				#save temp copy of image, to be loaded into graph
+				date = datetime.datetime.now().split(" ")
+				self.filename = date[0] + date[1].split(".")[0].replace(":","_")
+				plt.savefig(self.filename+".jpg",bbox_inches='tight')
 				
-			p1, = host.plot(sampledTime, sampledOutput, color="r", label="Fuel Cell Output")
-			p2, = par1.plot(sampledTime, sampledCharge, label="Battery Charge")
-
-			host.legend()
-			
-			host.yaxis.label.set_color(p1.get_color())
-			par1.yaxis.label.set_color(p2.get_color())
-
-			plt.draw()
-			
-			#save temp copy of image, to be loaded into graph
-			plt.savefig("temp.jpg",bbox_inches='tight')
-			
-			graph = wx.StaticBitmap(panel, wx.ID_ANY, wx.Bitmap("temp.jpg"))
-			graph.Show()
-			grid = wx.grid.Grid(panel, -1)
-			grid.CreateGrid(2, 2)
-			grid.SetCellValue(0,0, f'Time to 0 charge, ${scale}')
-			grid.SetCellValue(0,1, str(len(chargeVsTime)/(60*60*24)))
-			grid.SetCellValue(1,0, f'Time to 0 fuel cell output, ${scale}')
-			grid.SetCellValue(0,1, str(timeToZeroOutput/(60*60*24)))
-			grid.Show()
-			return {"graph":graph,"table":grid}
+				graph = wx.StaticBitmap(panel, wx.ID_ANY, wx.Bitmap(self.filename+".jpg"))
+				graph.Show()
+				grid = wx.grid.Grid(panel, -1)
+				grid.CreateGrid(2, 2)
+				grid.SetCellValue(0,0, f'Time to 0 charge, ${scale}')
+				grid.SetCellValue(0,1, str(self.timeToEmptyBattery/(60*60*24)))
+				grid.SetCellValue(1,0, f'Time to 0 fuel cell output, ${scale}')
+				grid.SetCellValue(0,1, str(self.timeToZeroOutput/(60*60*24)))
+				grid.Show()
+				self.results = {"graph":graph,"table":grid}
+				return self.results
+	def exportResults():
+		#we already have the image saved, we just need to export the data and the popts with equation format
+		data = {
+			"a": self.popts[0],
+			"b": self.popts[1],
+			"c": self.popts[2],
+			"form": "a - ((a-b) * e^(-c*t)",
+			"timeToEmptyBattery":self.timeToEmptyBattery,
+			"timeToEmptyFuelCell":self.timeToZeroOutput
+		}
+		with open(self.filename+'.json','w') as f:
+			f.write(json.dumps(data))
+	

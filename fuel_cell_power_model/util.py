@@ -1,41 +1,36 @@
-# utilfity functions for fuel cell modeling
 from scipy.optimize import curve_fit
 import numpy as np
-scales = {"Hours": 60*60, "Days":60*60*24}
 
-def generateFuelCellCurveFromPoints(initialFuelCellOutput, plusTenOutput, plusHundredOutput, scale):
-	#use scale to convert t=10 and t=100 into seconds
-	timeInitial = 0
-	timePlusTen = 10 * scales[scale]
-	timePlusHundred = 10 * timePlusTen
+def generateFuelCellCurveFromPoints(points, scale):	
+	[equation, popt] = gencurve(points)
 	
-	#create a generator that will yield the curve
-	
-	equation = gencurve(initialFuelCellOutput, plusTenOutput, plusHundredOutput, timePlusTen, timePlusHundred)
-	
-	t = 0
-	
+	t_zero = 0
+	t_one = scale
+	yield popt
+	yield equation(0) #we give the t = 0 value first
 	while True:
-		yield equation(t)
-		t+=1
+		result = sum([equation(t) for t in range(t_zero, t_one)])
+		t_zero += scale
+		t_one += scale
+		yield result
 		
 def func(t, V, W, k):
-    y = V  - ((V - W) * (1 - np.exp(-k * t)) / k)
+    y = V - ((V - W) * (np.exp(-k * t)))
     return y
 		
-def gencurve(initialFuelCellOutput, plusTenOutput, plusHundredOutput, timePlusTen, timePlusHundred):
-	t_one = 0
-	t_two = timePlusTen
-	t_three = timePlusHundred
-	
-	y_one = initialFuelCellOutput
-	y_two = plusTenOutput
-	y_three = plusHundredOutput
-		
-	popt,_ = curve_fit(func, [t_one, t_two, t_three],[y_one, y_two, y_three])
+def gencurve(points):
+	[times, outputs] = [list(t) for t in zip(*l)]	
+	popt,_ = curve_fit(func, times, outputs)
 	
 	def curve(t):
 		return func(t, popt[0], popt[1], popt[2])
 	
-	return curve
-	
+	return [curve, popt]
+
+def getPoints(grid):
+	data = []
+	for i in range(0, grid.GetNumbercols()):
+		time = grid.GetCellValue(0, i)
+		output = grid.GetCellValue(1,i)
+		data.append((time, output))
+	return data
