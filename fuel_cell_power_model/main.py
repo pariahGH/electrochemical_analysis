@@ -1,11 +1,18 @@
 import wx
 import util
 import function_classes
+import time
+
+#TODO: write a test file ffs
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
 
 class MainWindow(wx.Frame):
 	selectedSettings = None
 	def __init__(self, *args, **kw):
 		super(MainWindow,self).__init__(*args, **kw, size=(1000,1000))
+		
 		self.rootPanel = wx.Panel(self)
 		rootSizer = wx.BoxSizer(wx.VERTICAL)
 		generateButton = wx.Button(self.rootPanel, wx.ID_ANY, "Process")
@@ -20,9 +27,10 @@ class MainWindow(wx.Frame):
 		#over time, should be able to add arbitrary types of generated extrapolations
 		#that can easily be swapped
 		self.selectedSettings = function_classes.UseCurveSettings(self.rootPanel)
-		controlsSizer.AddMany([generateButton, clearButton])
+		controlsSizer.AddMany([generateButton, clearButton, self.exportResultsButton])
 		
-		rootSizer.AddMany([controlsSizer, self.selectedSettings.getSettings(), self.graphSizer, self.tableSizer])
+		rootSizer.AddMany([(controlsSizer,0,wx.ALIGN_CENTER_HORIZONTAL), (self.selectedSettings.getSettings(),0,wx.ALIGN_CENTER_HORIZONTAL), 
+			(self.graphSizer,1,wx.ALIGN_CENTER_HORIZONTAL), (self.tableSizer,1,wx.ALIGN_CENTER_HORIZONTAL)])
 		
 		self.rootPanel.SetSizerAndFit(rootSizer)
 		self.Bind(wx.EVT_BUTTON, self.onClearClicked, clearButton)
@@ -30,7 +38,7 @@ class MainWindow(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self.onExportResultsClicked, self.exportResultsButton)
 		
 	def onClearClicked(self, evt):
-		self.selectedSettings.clear()
+		self.selectedSettings.clear(evt)
 			
 	def onGenerateClicked(self, evt):
 		self.graphSizer.Clear()
